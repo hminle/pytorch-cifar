@@ -145,6 +145,6 @@ def test(epoch):
 
 
 for epoch in range(start_epoch, start_epoch+args.epochs):
-    optimizer = exp_lr_scheduler(optimizer, epoch, lr_decay_epoch=50)	
+    optimizer = exp_lr_scheduler(optimizer, epoch, lr_decay_epoch=25)	
     train(epoch, optimizer)
     test(epoch)
