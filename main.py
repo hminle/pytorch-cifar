@@ -22,6 +22,8 @@ parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
 parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
 parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
 parser.add_argument('--epochs', '-e', default=200, type=int, help='num of epochs')
+parser.add_argument('--batch_size', '-b', default=64, type=int, help='batch size')
+parser.add_argument('--pretrained', '-p', action='store_true', help='using pretrained model')
 args = parser.parse_args()
 
 use_cuda = torch.cuda.is_available()
@@ -38,10 +40,10 @@ transform = transforms.Compose([
 ])
 
 trainset = torchvision.datasets.CIFAR10(root='./data', train=True, download=True, transform=transform)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=2)
+trainloader = torch.utils.data.DataLoader(trainset, batch_size=args.batch_size, shuffle=True, num_workers=2)
 
 testset = torchvision.datasets.CIFAR10(root='./data', train=False, download=True, transform=transform)
-testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=2)
+testloader = torch.utils.data.DataLoader(testset, batch_size=args.batch_size, shuffle=False, num_workers=2)
 
 classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
 
@@ -56,11 +58,14 @@ if args.resume:
     start_epoch = checkpoint['epoch']
 else:
     print('==> Building model..')
-    # net = VGG('VGG19')
-    net = ResNet18()
-    # net = GoogLeNet()
-    #net = DenseNet121()
-    #net = ResNeXt29_2x64d()
+    if args.pretrained:
+        # resnet18, resnet34, resnet50, resnet101, resnet152
+        net = ResNet_pretrained("resnet101", 10)
+        optimizer = optim.SGD(net.classifier.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
+    else:	
+        #net = ResNet18()
+        net = ResNet50()
+        optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
 
 if use_cuda:
     net.cuda()
@@ -68,7 +73,6 @@ if use_cuda:
     cudnn.benchmark = True
 
 criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
 
 # Schedule LR
 def exp_lr_scheduler(optimizer, epoch, init_lr=args.lr, lr_decay_epoch=10):

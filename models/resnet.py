@@ -4,6 +4,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from torch.autograd import Variable
+import torchvision.models
 
 
 def conv3x3(in_planes, out_planes, stride=1):
@@ -95,6 +96,27 @@ class ResNet(nn.Module):
         out = self.linear(out)
         return out
 
+class ResNetPretrained(nn.Module):
+    def __init__(self, arch, num_classes, is_pretrained=True):
+        super(ResNetPretrained, self).__init__()
+        if is_pretrained:
+            print("=> Using pre-trained model '{}'".format(arch))
+            model = torchvision.models.__dict__[arch](pretrained=True)
+            for param in model.parameters():
+                param.requires_grad = False
+        else:
+            model = models.__dict__[arch](pretrained=False)
+        self.features = nn.Sequential(*list(model.children())[:-2])
+        fc_input_features = model.fc.in_features
+        self.classifier = nn.Linear(fc_input_features, num_classes)
+        
+    def forward(self, x):
+        x = self.features(x)
+        x = x.view(x.size(0), -1)
+        return self.classifier(x)
+
+def ResNet_pretrained(arch, num_classes):
+    return ResNetPretrained(arch, num_classes)
 
 def ResNet18():
     return ResNet(BasicBlock, [2,2,2,2])
