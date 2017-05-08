@@ -27,14 +27,6 @@ def get_mean_and_std(dataset):
     std.div_(len(dataset))
     return mean, std
 
-# import torchvision
-# import torchvision.transforms as transforms
-# transform = transforms.Compose([transforms.ToTensor()])
-# dataset = torchvision.datasets.CIFAR10(root='./data', train=True, download=False, transform=transform)
-# mean, std = get_mean_and_std(dataset)
-# print(mean)
-# print(std)
-
 def init_params(net):
     '''Init layer parameters.'''
     for m in net.modules():

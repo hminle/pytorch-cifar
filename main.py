@@ -24,6 +24,7 @@ parser.add_argument('--resume', '-r', action='store_true', help='resume from che
 parser.add_argument('--epochs', '-e', default=200, type=int, help='num of epochs')
 parser.add_argument('--batch_size', '-b', default=64, type=int, help='batch size')
 parser.add_argument('--pretrained', '-p', action='store_true', help='using pretrained model')
+parser.add_argument('--lr_decay_epoch', default=60, type=int, help='Specify the epoch when lr will be decayed')
 args = parser.parse_args()
 
 use_cuda = torch.cuda.is_available()
@@ -52,10 +53,11 @@ if args.resume:
     # Load checkpoint.
     print('==> Resuming from checkpoint..')
     assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
-    checkpoint = torch.load('./checkpoint/ckpt.t7')
+    checkpoint = torch.load('./checkpoint/ckpt.t7', map_location=lambda storage, loc: storage)
     net = checkpoint['net']
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch']
+    optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
 else:
     print('==> Building model..')
     if args.pretrained:
@@ -75,7 +77,7 @@ if use_cuda:
 criterion = nn.CrossEntropyLoss()
 
 # Schedule LR
-def exp_lr_scheduler(optimizer, epoch, init_lr=args.lr, lr_decay_epoch=10):
+def lr_scheduler(optimizer, epoch, init_lr=args.lr, lr_decay_epoch=10):
     """Decay learning rate by a factor of 0.1 every lr_decay_epoch epochs."""
     lr = init_lr * (0.1**(epoch // lr_decay_epoch))
 
@@ -149,6 +151,6 @@ def test(epoch):
 
 
 for epoch in range(start_epoch, start_epoch+args.epochs):
-    optimizer = exp_lr_scheduler(optimizer, epoch, lr_decay_epoch=25)	
+    optimizer = lr_scheduler(optimizer, epoch, lr_decay_epoch=args.lr_decay_epoch)	
     train(epoch, optimizer)
     test(epoch)
